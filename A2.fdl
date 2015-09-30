@@ -1,4 +1,4 @@
-
+/*######################### PC ##########################*/
 
 dp PC(out pc_out : ns(5))
 {
@@ -16,14 +16,12 @@ always{
 PC(pc_out);
 }*/
 
+/*######################### ADDER ##########################*/
+
 dp Adder(in in1,in2: tc(32);out adder_out: tc(32)){
-	sig a,b: tc(32);
-	reg c: tc(32);
+	
 always{
-	a = in1;
-	b = in2;
-	c = a + b;
-	adder_out = c;	
+	adder_out = in1 + in2;	
 	}
 }
 
@@ -46,7 +44,174 @@ fsm f_testbench(testAdder){
 	@s2 (test_2) -> s0; // run test_2 and go to s0
 }
 
-system myFirstSystem{
+/*system adderSystem{
 	Adder(A, B, R);
 	testAdder(A, B, R);
+}*/
+
+/*######################### MULTIPLEXER ##########################*/
+dp Multiplexer(in in1,in2: tc(32); in select: ns(1);out mux_out: tc(32)){
+	
+always{
+	mux_out = select ? in2 : in1;
+	}
 }
+
+
+dp testMultiplexer(out A,B: tc(32); out select: ns(1); in R: tc(32)){
+	always{
+	$display($dec, "Cycle:", $cycle, ", A=", A, ", B=",B, " Sel=",select, ", R=",R);
+	}
+
+	sfg test_0 {A=3;B=6;select=0;}
+	sfg test_1 {A=3;B=6;select=1;}
+	sfg test_2 {A=234;B=208;select=0;}
+	
+
+}
+
+fsm mux_testbench(testMultiplexer){
+	initial s0; // begin with state s0
+	state s1,s2;	// other states are: s1
+	@s0 (test_0) -> s1; // run test_0 and go to s1
+	@s1 (test_1) -> s2; // run test_1 and go to s2
+	@s2 (test_2) -> s0; //run test 2 and go to s0
+}
+
+/*system muxSystem{
+	Multiplexer(A, B, select, R);
+	testMultiplexer(A, B, select, R);
+}*/
+
+/*######################### ALU ##########################*/
+dp ALU(in in1,in2: tc(32); in select: ns(2);out alu_out: tc(32); out negN, zeroZ: ns(1)){
+	
+always{
+	alu_out = (select == 0) ? (in1-in2) : 
+	(select == 1) ? (in2-in1) :
+	(select == 2) ? in1 : in2;
+	negN = alu_out[31];
+	zeroZ = (alu_out == 0) ? 1 : 0;
+	
+	}
+}
+
+dp testALU(out A,B: tc(32); out select: ns(2); in R: tc(32); in N,Z: ns(1)){
+	always{
+	$display($dec, "Cycle:", $cycle, ", A=", A, ", B=",B, " Sel=",select, ", R=",R,", N=",N," Z=",Z);
+	}
+	
+	sfg test_0 {A=3;B=6;select=0;}
+	sfg test_1 {A=3;B=6;select=1;}
+	sfg test_2 {A=3;B=6;select=2;}
+	sfg test_3 {A=3;B=0;select=3;}
+	
+
+}
+
+fsm alu_testbench(testALU){
+	initial s0; // begin with state s0
+	state s1,s2,s3;	// other states are: s1
+	@s0 (test_0) -> s1; // run test_0 and go to s1
+	@s1 (test_1) -> s2; // run test_1 and go to s2
+	@s2 (test_2) -> s3; //run test 2 and go to s0
+	@s3 (test_3) -> s0; //run test 3 and go to s0.
+}
+/*
+system aluSystem{
+	ALU(A, B, select, R, N, Z);
+	testALU(A, B, select, R, N, Z);
+}*/
+
+/*######################### Register File ##########################*/
+dp RegFile(in asel,bsel,storesel: ns(3); in storeenable: ns(1); in storedata : tc(32);out outA,outB: tc(32)){
+	reg reg1 : ns(1);
+	reg reg2,reg3,reg4,reg5,reg6,reg7,reg8 : tc(32);
+always{
+	outA = (asel == 0) ? 0 :
+		(asel == 1) ? reg2:
+		(asel == 2) ? reg3:
+		(asel == 3) ? reg4:
+		(asel == 4) ? reg5:
+		(asel == 5) ? reg6:
+		(asel == 6) ? reg7: reg8;
+		
+	outB = (bsel == 0) ? 0 :
+		(bsel == 1) ? reg2:
+		(bsel == 2) ? reg3:
+		(bsel == 3) ? reg4:
+		(bsel == 4) ? reg5:
+		(bsel == 5) ? reg6:
+		(bsel == 6) ? reg7: reg8;
+		
+	reg2 = (storeenable == 0) ? reg2 : (storesel == 1) ? storedata : reg2;
+	reg3 = (storeenable == 0) ? reg3 : (storesel == 2) ? storedata : reg3;
+	reg4 = (storeenable == 0) ? reg4 : (storesel == 3) ? storedata : reg4;
+	reg5 = (storeenable == 0) ? reg5 : (storesel == 4) ? storedata : reg5;
+	reg6 = (storeenable == 0) ? reg6 : (storesel == 5) ? storedata : reg6;
+	reg7 = (storeenable == 0) ? reg7 : (storesel == 6) ? storedata : reg7;
+	reg8 = (storeenable == 0) ? reg8 : (storesel == 7) ? storedata : reg8;
+	}
+}
+
+dp testRegFile(out asel,bsel,storesel: ns(3); out storeenable: ns(1); out storedata : tc(32); in outA,outB: tc(32)){
+	always{
+	$display($dec, "Cycle:", $cycle, ", asel=", asel, ", bsel=",bsel, ", storeenable=",storeenable, " storesel=",storesel, ", storedata=",storedata,", outA=",outA," outB=",outB);
+	}
+	
+	sfg test_0 {asel=0;bsel=0;storesel=1;storeenable=1;storedata=5;}
+	sfg test_1 {asel=0;bsel=0;storesel=2;storeenable=1;storedata=10;}
+	sfg test_2 {asel=0;bsel=0;storesel=3;storeenable=1;storedata=15;}
+	sfg test_3 {asel=1;bsel=2;storesel=0;storeenable=0;storedata=0;}
+	sfg test_4 {asel=2;bsel=3;storesel=0;storeenable=0;storedata=0;}
+
+}
+
+fsm RegFile_testbench(testRegFile){
+	initial s0; // begin with state s0
+	state s1,s2,s3,s4;	// other states are: s1
+	@s0 (test_0) -> s1; // run test_0 and go to s1
+	@s1 (test_1) -> s2; // run test_1 and go to s2
+	@s2 (test_2) -> s3; //run test 2 and go to s3
+	@s3 (test_3) -> s4; //run test 3 and go to s4.
+	@s4 (test_4) -> s0; //run test 4 and go to s0.
+}
+
+/*system regFileSystem{
+	RegFile(asel,bsel,storesel,storeenable,storedata,outA,outB);
+	testRegFile(asel,bsel,storesel,storeenable,storedata,outA,outB);
+}*/
+
+
+/*######################### Instruction Memory ##########################*/
+ipblock instmem(in address 	: 	ns(5);
+				in wr,rd	:	ns(1);
+				in idata	:	ns(32);
+				out odata	:	ns(32))
+{
+	iptype "ram";
+	ipparm "size=64";
+	ipparm "wl=32";
+	ipparm "file=Instructions.txt";
+}
+
+dp Fetch(out Inst : ns(32)){
+	reg rd : ns(1);
+	sig c : ns(5);
+	sig odata : ns(32);
+	use PC(c);
+	use instmem(c, 0, 1, 0, odata);
+	
+	
+	always{
+		$display($hex, "address ", c, " data ", odata);
+		Inst = odata;
+	}
+	
+}
+
+
+
+system cpuFetch{
+	Fetch(Inst);
+	}
